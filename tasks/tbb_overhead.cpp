@@ -44,12 +44,9 @@ int main(int argc, char **argv)
 {
     benchmark::Initialize(&argc, argv);
 
-    int num_threads = 1;
-    if (argc == 2)
-    {
-        num_threads = std::atoi(argv[1]);
-    }
-
+    const char *env = std::getenv("NUM_THREADS");
+    std::string thread_env = env == nullptr ? "1": std::string(env);
+    int num_threads = std::atoi(thread_env.c_str());
 
     tbb::task_scheduler_init init(num_threads);
     benchmark::RunSpecifiedBenchmarks();

@@ -5,7 +5,7 @@
 
 #include <benchmark/benchmark.h>
 
-#include <hpx/hpx_main.hpp>
+#include <hpx/hpx_init.hpp>
 #include <hpx/include/threads.hpp>
 
 #include <support/dummy.hpp>
@@ -29,10 +29,22 @@ static void hpx_thread_overhead(benchmark::State& state)
 }
 BENCHMARK(hpx_thread_overhead)->UseRealTime();
 
+int hpx_main(int argc, char **argv)
+{
+    benchmark::RunSpecifiedBenchmarks();
+
+    return hpx::finalize();
+}
+
 int main(int argc, char **argv)
 {
     benchmark::Initialize(&argc, argv);
-    benchmark::RunSpecifiedBenchmarks();
 
-    return 0;
+    const char *env = std::getenv("NUM_THREADS");
+    std::string thread_env = env == nullptr ? "1": std::string(env);
+
+    std::vector<std::string> const cfg = {
+        "hpx.os_threads!=" + thread_env
+    };
+    return hpx::init(argc, argv, cfg);
 }

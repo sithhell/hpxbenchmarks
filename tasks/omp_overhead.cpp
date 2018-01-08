@@ -4,6 +4,7 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 #include <benchmark/benchmark.h>
+#include <omp.h>
 
 #include <support/dummy.hpp>
 
@@ -30,6 +31,11 @@ BENCHMARK(omp_overhead)->UseRealTime();
 
 int main(int argc, char **argv)
 {
+    const char *env = std::getenv("NUM_THREADS");
+    std::string thread_env = env == nullptr ? "1": std::string(env);
+
+    omp_set_num_threads(std::atoi(thread_env.c_str()));
+
     benchmark::Initialize(&argc, argv);
     benchmark::RunSpecifiedBenchmarks();
 

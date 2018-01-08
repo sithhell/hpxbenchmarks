@@ -59,12 +59,10 @@ BENCHMARK(omp_homogeneous_for)
 int main(int argc, char **argv)
 {
     benchmark::Initialize(&argc, argv);
-    int num_threads = 1;
-    if (argc == 2)
-    {
-        num_threads = std::atoi(argv[1]);
-    }
-    omp_set_num_threads(num_threads);
+    const char *env = std::getenv("NUM_THREADS");
+    std::string thread_env = env == nullptr ? "1": std::string(env);
+
+    omp_set_num_threads(std::atoi(thread_env.c_str()));
     benchmark::RunSpecifiedBenchmarks();
 
     return 0;
