@@ -68,19 +68,21 @@ width = 0.5
 
 rects = []
 for d in data:
+    name = d[0]
     fig, ax = plt.subplots()
-    ax.barh(0, d[1][1], width, label='Coroutine Creation', align='center')
-    ax.barh(0, d[1][2] - d[1][1], width, label='Context Switch', left=d[1][1])
-    ax.barh(0, d[1][-1] - d[1][2], width, label='Scheduler Overhead', left = d[1][2])
+    coroutine_creation = d[1][1]
+    context_switch = d[1][2] - coroutine_creation
+    scheduler_overhead = d[1][-1] - d[1][2]
 
-    ax.set_xlabel('Cycles')
+    total = d[1][-1]
+
+    labels = 'Stack Creation', 'Context Switch', 'Scheduler Overhead'
+    sizes = (np.array([coroutine_creation, context_switch, scheduler_overhead]) / total) * 100
+    explode = (0, 0, 0.1)
+
+    ax.pie(sizes, labels = labels, autopct='%1.1f%%', startangle=10)
+    ax.axis('equal')
+
     ax.set_title('HPX Scheduling Overhead, %s' % name)
-    ax.yaxis.set_ticks_position('none')
-    ax.set_yticklabels(('', ''))
-    #ax.set_xticks(ind + ((N_experiments - 1) * width) / 2.0)
-    #ax.set_xticklabels(('Coroutines Creation', '
-
-    ax.legend()
-    #ax.legend((r for r in rects), (d[0] for d in data))
 
 plt.show()

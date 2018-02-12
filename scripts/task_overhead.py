@@ -57,7 +57,7 @@ for results_dir in results:
 
     #times = np.array([coroutines, hpx_threads, std_threads])
     #data.append((name, times / baseline))
-    times = np.array([baseline, coroutines, omp, tbb])
+    times = np.array([baseline, coroutines, hpx_threads, omp, tbb])
     cycles = (times * mhz) / 1000
     data.append((name, cycles))
 
@@ -78,15 +78,17 @@ width = 1.0 / (N_experiments + 1.0)
 
 fig, ax = plt.subplots()
 
+
 rects = []
 for d, i in zip(data, range(0, len(data))):
+    print('%s %s' % (d[0], d[1][2]))
     rect = ax.bar(ind + i * width, d[1], width)
     rects.append(rect)
 
 ax.set_ylabel('Cycles')
 ax.set_title('Task creation overhead')
 ax.set_xticks(ind + ((N_experiments - 1) * width) / 2.0)
-ax.set_xticklabels(('Function Call', 'HPX Coroutines', 'OpenMP', 'TBB'))
+ax.set_xticklabels(('Function Call', 'HPX Coroutines', 'HPX Threads', 'OpenMP', 'TBB'))
 
 ax.legend((r for r in rects), (d[0] for d in data))
 
