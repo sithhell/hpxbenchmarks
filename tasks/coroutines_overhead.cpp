@@ -21,7 +21,6 @@ BENCHMARK(function_call_overhead)->UseRealTime();
 
 static void coroutines_create_overhead(benchmark::State& state)
 {
-    hpx::threads::thread_data::pool_type pool;
     for (auto _: state)
     {
         using hpx::threads::thread_init_data;
@@ -30,29 +29,27 @@ static void coroutines_create_overhead(benchmark::State& state)
             [](hpx::threads::thread_state_ex_enum)
             {
                 dummy();
-                return hpx::threads::thread_result_type(hpx::threads::terminated, hpx::threads::thread_id_type());
+                return hpx::threads::thread_result_type(hpx::threads::terminated, hpx::threads::invalid_thread_id);
             },
             hpx::util::thread_description()
         );
-        auto thrd = hpx::threads::thread_data::create(data, pool, hpx::threads::pending);
+        hpx::threads::thread_data thrd(data, nullptr, hpx::threads::pending);
     }
 }
 BENCHMARK(coroutines_create_overhead)->UseRealTime();
 
 static void coroutines_create_reuse_overhead(benchmark::State& state)
 {
-    hpx::threads::thread_data::pool_type pool;
-
     hpx::threads::thread_init_data data(
         [](hpx::threads::thread_state_ex_enum)
         {
             dummy();
-            return hpx::threads::thread_result_type(hpx::threads::terminated, hpx::threads::thread_id_type());
+            return hpx::threads::thread_result_type(hpx::threads::terminated, hpx::threads::invalid_thread_id);
         },
         hpx::util::thread_description()
     );
-    auto thrd = hpx::threads::thread_data::create(data, pool, hpx::threads::pending);
-    (*thrd)();
+    hpx::threads::thread_data thrd(data, nullptr, hpx::threads::pending);
+    thrd();
 
     for (auto _: state)
     {
@@ -60,29 +57,27 @@ static void coroutines_create_reuse_overhead(benchmark::State& state)
             [](hpx::threads::thread_state_ex_enum)
             {
                 dummy();
-                return hpx::threads::thread_result_type(hpx::threads::terminated, hpx::threads::thread_id_type());
+                return hpx::threads::thread_result_type(hpx::threads::terminated, hpx::threads::invalid_thread_id);
             },
             hpx::util::thread_description()
         );
-        thrd->rebind(data, hpx::threads::pending);
+        thrd.rebind(data, hpx::threads::pending);
     }
 }
 BENCHMARK(coroutines_create_reuse_overhead)->UseRealTime();
 
 static void coroutines_call_overhead(benchmark::State& state)
 {
-    hpx::threads::thread_data::pool_type pool;
-
     hpx::threads::thread_init_data data(
         [](hpx::threads::thread_state_ex_enum)
         {
             dummy();
-            return hpx::threads::thread_result_type(hpx::threads::terminated, hpx::threads::thread_id_type());
+            return hpx::threads::thread_result_type(hpx::threads::terminated, hpx::threads::invalid_thread_id);
         },
         hpx::util::thread_description()
     );
-    auto thrd = hpx::threads::thread_data::create(data, pool, hpx::threads::pending);
-    (*thrd)();
+    hpx::threads::thread_data thrd(data, nullptr, hpx::threads::pending);
+    thrd();
 
     for (auto _: state)
     {
@@ -90,19 +85,18 @@ static void coroutines_call_overhead(benchmark::State& state)
             [](hpx::threads::thread_state_ex_enum)
             {
                 dummy();
-                return hpx::threads::thread_result_type(hpx::threads::terminated, hpx::threads::thread_id_type());
+                return hpx::threads::thread_result_type(hpx::threads::terminated, hpx::threads::invalid_thread_id);
             },
             hpx::util::thread_description()
         );
-        thrd->rebind(data, hpx::threads::pending);
-        (*thrd)();
+        thrd.rebind(data, hpx::threads::pending);
+        thrd();
     }
 }
 BENCHMARK(coroutines_call_overhead)->UseRealTime();
 
 static void coroutines_overhead(benchmark::State& state)
 {
-    hpx::threads::thread_data::pool_type pool;
     for (auto _: state)
     {
         using hpx::threads::thread_init_data;
@@ -111,13 +105,13 @@ static void coroutines_overhead(benchmark::State& state)
             [](hpx::threads::thread_state_ex_enum)
             {
                 dummy();
-                return hpx::threads::thread_result_type(hpx::threads::terminated, hpx::threads::thread_id_type());
+                return hpx::threads::thread_result_type(hpx::threads::terminated, hpx::threads::invalid_thread_id);
             },
             hpx::util::thread_description()
         );
-        auto thrd = hpx::threads::thread_data::create(data, pool, hpx::threads::pending);
+        hpx::threads::thread_data thrd(data, nullptr, hpx::threads::pending);
 
-        (*thrd)();
+        thrd();
     }
 }
 BENCHMARK(coroutines_overhead)->UseRealTime();
@@ -137,7 +131,7 @@ int main(int argc, char **argv)
     std::string thread_env = env == nullptr ? "1": std::string(env);
 
     std::vector<std::string> const cfg = {
-        "hpx.os_threads!=" + thread_env
+        "hpx.os_threads!=" + thread_env,
     };
     return hpx::init(argc, argv, cfg);
 }

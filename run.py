@@ -45,7 +45,7 @@ benchmarks=[
 
 import multiprocessing
 
-for threads in range(1, multiprocessing.cpu_count()):
+for threads in range(1, multiprocessing.cpu_count() + 1):
 
     my_env['NUM_THREADS'] = str(threads)
 
@@ -58,7 +58,7 @@ for threads in range(1, multiprocessing.cpu_count()):
         if not os.path.exists(os.path.dirname(result)):
             os.makedirs(os.path.dirname(result))
         bench = [
-            benchmark + ' --benchmark_out_format=json --benchmark_out=' + result]
+            benchmark + ' --benchmark_out_format=json --benchmark_out=' + result + ' -Ihpx.stacks.use_guard_pages=0']
         p = subprocess.Popen(bench, env = my_env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         print(p.stdout.read())
         p.wait()

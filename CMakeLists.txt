@@ -9,7 +9,7 @@ find_package(TBB REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(MPI REQUIRED)
 
-set(BENCHMARK_ENABLE_TESTING OFF)
+set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "")
 add_subdirectory(google_benchmark)
 add_subdirectory(support)
 add_subdirectory(tasks)
