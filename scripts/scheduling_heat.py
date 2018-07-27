@@ -7,7 +7,9 @@ from pprint import pprint
 import numpy as np
 from matplotlib import cm
 import matplotlib.pyplot as plt
+import matplotlib
 import matplotlib.colors as colors
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import os
 
 if len(sys.argv) < 2:
@@ -61,13 +63,17 @@ granularities = [
     '1000/0',
 ]
 
-thread_nums = []
-max_speedup=0.0
+
+runtimes = ('seq', 'hpx', 'omp_for', 'omp_task', 'std')
+
+max_speedup = 0
+max_thread = 0
 
 for results_dir in results:
     name = os.path.split(results_dir)[-1]
     times = {}
-    for runtime in ('seq', 'hpx', 'hpx_base', 'omp_for', 'omp_task', 'tbb', 'std'):
+    thread_nums = []
+    for runtime in runtimes:
         times[runtime] = []
         for threads in range(1, 17):
             try:
@@ -79,7 +85,10 @@ for results_dir in results:
                     jdata = json.load(open('%s/scheduling/%s_scheduling_t%s.json' % (results_dir, runtime, threads)))
 
                 if not threads in thread_nums:
-                    thread_nums.append(int(threads))
+                    t = int(threads)
+                    if t > max_thread:
+                        max_thread = t
+                    thread_nums.append(t)
 
                 thread_times = []
 
@@ -105,7 +114,9 @@ for results_dir in results:
 
             except:
                 break
-    data.append((name, times))
+    print(name, len(times), len(thread_nums))
+    data.append((name, max_speedup, thread_nums, times))
+    max_speedup=0
 
 
 print(max_speedup)
@@ -123,42 +134,155 @@ class MidpointNormalize(colors.Normalize):
         x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
         return np.ma.masked_array(np.interp(value, x, y))
 
-for runtime in ('hpx', 'hpx_base', 'omp_for', 'omp_task', 'tbb', 'std'):
-    #normalize data
-    plot_data =  np.transpose(data[0][1][runtime])
+pgf_with_latex = {
+    "pgf.texsystem": "xelatex",         # use Xelatex which is TTF font aware
+    "text.usetex": True,                # use LaTeX to write all text
+    "font.family": "serif",             # use serif rather than sans-serif
+    "font.serif": "TeX Gyre Pagella",             # use 'Ubuntu' as the standard font
+    "font.sans-serif": [],
+    "font.monospace": "Anonymous Pro",    # use Ubuntu mono if we have mono
+    "axes.labelsize": 11,               # LaTeX default is 10pt font.
+    "font.size": 11,
+    "figure.titlesize": 11,               # Make the legend/label fonts a little smaller
+    "figure.titleweight": 1,               # Make the legend/label fonts a little smaller
+    "legend.fontsize": 11,               # Make the legend/label fonts a little smaller
+    "xtick.labelsize": 11,
+    "ytick.labelsize": 11,
+    "pgf.rcfonts": False,               # Use pgf.preamble, ignore standard Matplotlib RC
+    "text.latex.unicode": True,
+    "pgf.preamble": [
+        r'\usepackage{fontspec}',
+        r'\setmainfont[Mapping=tex-text]{TeX Gyre Pagella}',
+        r'\setsansfont[Mapping=tex-text]{TeX Gyre Adventor}',
+        r'\setmonofont[Mapping=tex-text]{Anonymous Pro}',
+        r'\newfontfamily\chapfont[Mapping=tex-text]{TeX Gyre Adventor}',
+    ]
+}
 
-    fig, ax = plt.subplots()
+matplotlib.rcParams.update(pgf_with_latex)
 
-    ax.set_title('Scheduling with different granularities, %s' % runtime)
-    ax.set_yticks(np.arange(len(granularities)))
-    ax.set_yticklabels([ float(g.split('/')[1])/1000 for g in granularities])
-    ax.set_xticks(np.arange(len(thread_nums)))
-    ax.set_xticklabels(thread_nums)
-    ax.set_xlabel('#Cores')
-    ax.set_ylabel('Granularity [microseconds]')
+def heatmap(data, row_labels, col_labels, ax=None,
+            cbar_kw={}, cbarlabel="", **kwargs):
+    """
+    Create a heatmap from a numpy array and two lists of labels.
 
-    upper_bound = round(max_speedup)
-    if (upper_bound % 4) != 0:
-        upper_bound = upper_bound  + 4 - (upper_bound % 4)
-    bounds = np.linspace(0, upper_bound, 1000)
-    norm = colors.BoundaryNorm(boundaries=bounds, ncolors=256)
-    #norm = MidpointNormalize(1.0)
+    Arguments:
+        data       : A 2D numpy array of shape (N,M)
+        row_labels : A list or array of length N with the labels
+                     for the rows
+        col_labels : A list or array of length M with the labels
+                     for the columns
+    Optional arguments:
+        ax         : A matplotlib.axes.Axes instance to which the heatmap
+                     is plotted. If not provided, use current axes or
+                     create a new one.
+        cbar_kw    : A dictionary with arguments to
+                     :meth:`matplotlib.Figure.colorbar`.
+        cbarlabel  : The label for the colorbar
+    All other arguments are directly passed on to the imshow call.
+    """
 
-    #cax = ax.pcolormesh(
-    #    np.arange(len(thread_nums)),
-    #    np.arange(len(granularities)), plot_data, norm=norm, cmap='RdBu_r'
-    #)
+    if not ax:
+        ax = plt.gca()
 
-    cax = ax.imshow(plot_data, cmap=cm.coolwarm, norm=norm)
+    # Plot the heatmap
+    im = ax.imshow(data, **kwargs)
 
-    cbar = fig.colorbar(cax, ticks=np.arange(upper_bound + 1, step=4), orientation='horizontal')
-    cbar.ax.set_xlabel('Speedup')
+    # Create colorbar
+    cbar = None
+    #cbar = ax.figure.colorbar(im, ax=ax, orientation='vertical', **cbar_kw)
+    #cbar.ax.set_ylabel(cbarlabel, rotation=-90, va="bottom")
 
-pprint(np.transpose(data[0][1]['hpx']))
-pprint(np.transpose(data[0][1]['hpx_base']))
-try:
-    pprint(np.transpose(data[0][1]['hpx']) / np.transpose(data[0][1]['hpx_base']))
-except:
-    pass
+    # We want to show all ticks...
+    ax.set_xticks(np.arange(data.shape[1]))
+    ax.set_yticks(np.arange(data.shape[0]))
+    # ... and label them with the respective list entries.
+    ax.set_xticklabels(col_labels)
+    ax.set_yticklabels(row_labels)
 
+    # Let the horizontal axes labeling appear on top.
+    #ax.tick_params(top=False, bottom=True,
+    #               labeltop=False, labelbottom=False)
+
+    # Rotate the tick labels and set their alignment.
+   # plt.setp(ax.get_xticklabels(), rotation=-30, ha="right",
+   #          rotation_mode="anchor")
+
+    # Turn spines off and create white grid.
+    for edge, spine in ax.spines.items():
+        spine.set_visible(False)
+
+    #ax.set_xticks(np.arange(data.shape[1]+1)-.5, minor=True)
+    #ax.set_yticks(np.arange(data.shape[0]+1)-.5, minor=True)
+    #ax.grid(which="minor", color="w", linestyle='-', linewidth=3)
+    #ax.tick_params(which="minor", bottom=False, left=False)
+
+    return im, cbar
+
+fig, axes = plt.subplots(len(runtimes)-1, len(data), figsize=(5.78851, 5.78851 * (9./16.) * 2), sharex=False, sharey=True)
+nrow_map = {r: i for (r, i) in zip(runtimes[1:], range(0, len(runtimes)-1))}
+ncol_map = {d[0]: i for (d, i) in zip(data, range(0, len(data)))}
+
+for d in data:
+    ncol = ncol_map[d[0]]
+    ax = None
+    for runtime in runtimes[1:]:
+        nrow = nrow_map[runtime]
+        ax = axes[nrow][ncol]
+        print(nrow, ncol)
+        #normalize data
+        plot_data =  np.transpose(np.array(d[3][runtime]))
+
+        #print(plot_data)
+        if runtime == 'omp_for':
+            ax.set_title('OpenMP parallel for')
+        elif runtime == 'omp_task':
+            ax.set_title('OpenMP parallel task')
+        elif runtime == 'hpx':
+            ax.set_title('HPX \\texttt{std::async}')
+        else:
+            ax.set_title('C++ \\texttt{std::async}')
+        #ax.set_title('Scheduling with different granularities, %s' % runtime)
+        #ax.set_yticks(np.arange(len(granularities)))
+        #ax.set_yticklabels([ float(g.split('/')[1])/1000 for g in granularities])
+        #ax.set_xticks(np.arange(len(d[2])))
+        #ax.set_xticklabels(d[2])
+
+        upper_bound = round(np.max(plot_data))
+        if (upper_bound % 2) != 0:
+            upper_bound = upper_bound  + 3 - (upper_bound % 2)
+        bounds = np.linspace(0, upper_bound, 1000)
+        norm = colors.BoundaryNorm(boundaries=bounds, ncolors=256)
+        #norm = MidpointNormalize(1.0)
+
+        im, cbar = heatmap(plot_data, [ float(g.split('/')[1])/1000 for g in granularities], d[2], ax = ax, vmin=0, cmap="RdBu_r", cbarlabel="Speedup", norm=norm, cbar_kw=dict(ticks=np.arange(upper_bound + 1, step=2)))
+        ax.set_xlim([0, d[2][-1]])
+    ax.set_xlabel('\# Cores')
+    #ax.set_ylabel(' ')
+    plt.tight_layout()
+    #fig.text(0.1, 0.6, 'Granularity [microseconds]',
+    #             horizontalalignment='center', color='black', weight='bold',
+    #             fontsize=11, rotation=90)
+        #cax = ax.pcolormesh(
+        #    np.arange(len(thread_nums)),
+        #    np.arange(len(granularities)), plot_data, norm=norm, cmap='RdBu_r'
+        #)
+
+#        cax = ax.imshow(plot_data, cmap=cm.coolwarm, norm=norm)
+#        print(ax.get_aspect())
+#        ax.set_aspect(1.5)
+#        ax.apply_aspect(1.5)
+
+        #if ncol == len(runtimes)-2:
+   #divider = make_axes_locatable(axes)
+    #tax = divider.append_axes("left", size="5%", pad=0.05)
+    #tax.set_label('blubb')
 plt.show()
+        #    cbar = fig.colorbar(cax, cax=tax, ticks=np.arange(upper_bound + 1, step=4), orientation='vertical')
+
+#cbar.ax.set_ylabel('Speedup')
+#fig.text(0.98, 0.5, "Speedup", rotation='90')
+
+
+#pprint(np.transpose(data[0][1]['hpx']))
+
