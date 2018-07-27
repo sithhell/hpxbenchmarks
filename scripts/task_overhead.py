@@ -5,6 +5,7 @@ import json
 from pprint import pprint
 
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 import os
 
@@ -46,18 +47,18 @@ for results_dir in results:
     omp = float((x for x in omp_data['benchmarks']
         if x['name'] == 'omp_overhead/real_time').next()['real_time'])
 
-    tbb_data = json.load(open('%s/tasks/tbb_overhead.json' % results_dir))
-    tbb = float((x for x in tbb_data['benchmarks']
-        if x['name'] == 'tbb_overhead/real_time').next()['real_time'])
-
     std_threads_data = json.load(open('%s/tasks/std_thread_overhead.json' % results_dir))
     std_threads = float((x for x in std_threads_data['benchmarks']
         if x['name'] == 'std_thread_overhead/real_time').next()['real_time'])
-    std_threads=0
 
     #times = np.array([coroutines, hpx_threads, std_threads])
     #data.append((name, times / baseline))
-    times = np.array([baseline, coroutines, hpx_threads, omp, tbb])
+    #times = np.array([baseline/coroutines, baseline/hpx_threads, baseline/omp])
+    times = np.array([coroutines, hpx_threads - baseline, omp - baseline])
+
+    print(hpx_threads/omp)
+    print(omp/hpx_threads)
+
     cycles = (times * mhz) / 1000
     data.append((name, cycles))
 
@@ -76,8 +77,35 @@ N_experiments = len(data)
 ind = np.arange(N)
 width = 1.0 / (N_experiments + 1.0)
 
-fig, ax = plt.subplots()
+pgf_with_latex = {
+    "pgf.texsystem": "xelatex",         # use Xelatex which is TTF font aware
+    "text.usetex": True,                # use LaTeX to write all text
+    "font.family": "serif",             # use serif rather than sans-serif
+    "font.serif": "TeX Gyre Pagella",             # use 'Ubuntu' as the standard font
+    "font.sans-serif": [],
+    "font.monospace": "Anonymous Pro",    # use Ubuntu mono if we have mono
+    "axes.labelsize": 11,               # LaTeX default is 10pt font.
+    "font.size": 11,
+    "figure.titlesize": 11,               # Make the legend/label fonts a little smaller
+    "figure.titleweight": 1,               # Make the legend/label fonts a little smaller
+    "legend.fontsize": 11,               # Make the legend/label fonts a little smaller
+    "xtick.labelsize": 11,
+    "ytick.labelsize": 11,
+    "pgf.rcfonts": False,               # Use pgf.preamble, ignore standard Matplotlib RC
+    "text.latex.unicode": True,
+    "pgf.preamble": [
+        r'\usepackage{fontspec}',
+        r'\setmainfont[Mapping=tex-text]{TeX Gyre Pagella}',
+        r'\setsansfont[Mapping=tex-text]{TeX Gyre Adventor}',
+        r'\setmonofont[Mapping=tex-text]{Anonymous Pro}',
+        r'\newfontfamily\chapfont[Mapping=tex-text]{TeX Gyre Adventor}',
+    ]
+}
 
+matplotlib.rcParams.update(pgf_with_latex)
+
+
+fig, ax = plt.subplots(figsize=(5.78851, 5.78851 * (9./16.)))
 
 rects = []
 for d, i in zip(data, range(0, len(data))):
@@ -86,10 +114,12 @@ for d, i in zip(data, range(0, len(data))):
     rects.append(rect)
 
 ax.set_ylabel('Cycles')
-ax.set_title('Task creation overhead')
+ax.set_title('Task creation overhead', fontsize=11)
 ax.set_xticks(ind + ((N_experiments - 1) * width) / 2.0)
-ax.set_xticklabels(('Function Call', 'HPX Coroutines', 'HPX Threads', 'OpenMP', 'TBB'))
+ax.set_xticklabels(('HPX Coroutines', 'HPX Threads', 'OpenMP'))
 
 ax.legend((r for r in rects), (d[0] for d in data))
+plt.tight_layout(.5)
 
-plt.show()
+fname = '%s/task_overhead.pgf' % os.path.join(results_base, '../figures/')
+plt.savefig(fname)
