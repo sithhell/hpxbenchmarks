@@ -114,7 +114,7 @@ for d, i in zip(data, range(0, len(data))):
     rects.append(rect)
 
 ax.set_ylabel('Cycles')
-ax.set_title('Task creation overhead', fontsize=11)
+ax.set_title('Task Creation Overhead', fontsize=11, weight='bold')
 ax.set_xticks(ind + ((N_experiments - 1) * width) / 2.0)
 ax.set_xticklabels(('HPX Coroutines', 'HPX Threads', 'OpenMP'))
 

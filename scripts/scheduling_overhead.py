@@ -5,6 +5,7 @@ import json
 from pprint import pprint
 
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 import os
 
@@ -65,24 +66,63 @@ N_experiments = len(data)
 ind = np.arange(N)
 width = 0.5
 
+pgf_with_latex = {
+    "pgf.texsystem": "xelatex",         # use Xelatex which is TTF font aware
+    "text.usetex": True,                # use LaTeX to write all text
+    "font.family": "serif",             # use serif rather than sans-serif
+    "font.serif": "TeX Gyre Pagella",             # use 'Ubuntu' as the standard font
+    "font.sans-serif": [],
+    "font.monospace": "Anonymous Pro",    # use Ubuntu mono if we have mono
+    "axes.labelsize": 11,               # LaTeX default is 10pt font.
+    "font.size": 11,
+    "figure.titlesize": 11,               # Make the legend/label fonts a little smaller
+    "figure.titleweight": 1,               # Make the legend/label fonts a little smaller
+    "legend.fontsize": 11,               # Make the legend/label fonts a little smaller
+    "xtick.labelsize": 11,
+    "ytick.labelsize": 11,
+    "pgf.rcfonts": False,               # Use pgf.preamble, ignore standard Matplotlib RC
+    "text.latex.unicode": True,
+    "pgf.preamble": [
+        r'\usepackage{fontspec}',
+        r'\setmainfont[Mapping=tex-text]{TeX Gyre Pagella}',
+        r'\setsansfont[Mapping=tex-text]{TeX Gyre Adventor}',
+        r'\setmonofont[Mapping=tex-text]{Anonymous Pro}',
+        r'\newfontfamily\chapfont[Mapping=tex-text]{TeX Gyre Adventor}',
+    ]
+}
 
+matplotlib.rcParams.update(pgf_with_latex)
+
+fig, axes = plt.subplots(nrows=1, ncols=len(data), figsize=(5.78851, 5.78851 * (9./16.)))
+fig.subplots_adjust(wspace=0.25, hspace=0.20, top=0.85, bottom=0.05)
 rects = []
-for d in data:
+for d, ax in zip(data, axes.flatten()):
     name = d[0]
-    fig, ax = plt.subplots()
     coroutine_creation = d[1][1]
     context_switch = d[1][2] - coroutine_creation
     scheduler_overhead = d[1][-1] - d[1][2]
 
     total = d[1][-1]
 
-    labels = 'Stack Creation', 'Context Switch', 'Scheduler Overhead'
     sizes = (np.array([coroutine_creation, context_switch, scheduler_overhead]) / total) * 100
     explode = (0, 0, 0.1)
 
-    ax.pie(sizes, labels = labels, autopct='%1.1f%%', startangle=10)
+    ax.pie(sizes, autopct='%1.1f\%%', startangle=10)
     ax.axis('equal')
 
-    ax.set_title('HPX Scheduling Overhead, %s' % name)
+    ax.set_title(name, position=(0.5, .8), fontsize=11)
 
-plt.show()
+
+
+fig.text(0.5, 0.9, 'HPX Scheduling Overhead',
+             horizontalalignment='center', color='black', weight='bold',
+             fontsize=11)
+
+plt.tight_layout(.5)
+
+ax = axes[1]
+labels = 'Stack Creation', 'Context Switch', 'Scheduler Overhead'
+legend = ax.legend(labels, ncol=3, loc='lower center')
+
+fname = '%s/scheduling_overhead.pgf' % os.path.join(results_base, '../figures/')
+plt.savefig(fname)

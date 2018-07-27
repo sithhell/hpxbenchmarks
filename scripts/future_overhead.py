@@ -5,6 +5,7 @@ import json
 from pprint import pprint
 
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 import os
 
@@ -64,15 +65,15 @@ for results_dir in results:
 
     times = np.array([
         hpx_make_ready_void,
-        hpx_make_ready_int,
+        #hpx_make_ready_int,
         hpx_promise_void,
-        hpx_promise_int,
+        #hpx_promise_int,
         hpx_async_void,
-        hpx_async_int,
+        #hpx_async_int,
         std_promise_void,
-        std_promise_int,
-        std_async_void,
-        std_async_int
+        #std_promise_int,
+        std_async_void
+        #std_async_int
     ])
     cycles = (times * mhz) / 1000
     data.append((name, cycles))
@@ -88,7 +89,34 @@ N_experiments = len(data)
 ind = np.arange(N)
 width = 1.0 / (N_experiments + 1.0)
 
-fig, ax = plt.subplots()
+pgf_with_latex = {
+    "pgf.texsystem": "xelatex",         # use Xelatex which is TTF font aware
+    "text.usetex": True,                # use LaTeX to write all text
+    "font.family": "serif",             # use serif rather than sans-serif
+    "font.serif": "TeX Gyre Pagella",             # use 'Ubuntu' as the standard font
+    "font.sans-serif": [],
+    "font.monospace": "Anonymous Pro",    # use Ubuntu mono if we have mono
+    "axes.labelsize": 11,               # LaTeX default is 10pt font.
+    "font.size": 11,
+    "figure.titlesize": 11,               # Make the legend/label fonts a little smaller
+    "figure.titleweight": 1,               # Make the legend/label fonts a little smaller
+    "legend.fontsize": 11,               # Make the legend/label fonts a little smaller
+    "xtick.labelsize": 11,
+    "ytick.labelsize": 11,
+    "pgf.rcfonts": False,               # Use pgf.preamble, ignore standard Matplotlib RC
+    "text.latex.unicode": True,
+    "pgf.preamble": [
+        r'\usepackage{fontspec}',
+        r'\setmainfont[Mapping=tex-text]{TeX Gyre Pagella}',
+        r'\setsansfont[Mapping=tex-text]{TeX Gyre Adventor}',
+        r'\setmonofont[Mapping=tex-text]{Anonymous Pro}',
+        r'\newfontfamily\chapfont[Mapping=tex-text]{TeX Gyre Adventor}',
+    ]
+}
+
+matplotlib.rcParams.update(pgf_with_latex)
+
+fig, ax = plt.subplots(figsize=(5.78851, 5.78851 * (9./16.)))
 
 rects = []
 for d, i in zip(data, range(0, len(data))):
@@ -99,19 +127,19 @@ ax.set_ylabel('Cycles')
 ax.set_title('Task creation overhead')
 ax.set_xticks(ind + ((N_experiments - 1) * width) / 2.0)
 ax.set_xticklabels((
-    'HPX make_ready (void)',
-    'HPX make_ready (int)',
-    'HPX promise (void)',
-    'HPX promise (int)',
-    'HPX async (void)',
-    'HPX async (int)',
-    'std promise (void)',
-    'std promise (int)',
-    'std async (void)',
-    'std async (int)'))
-for tick in ax.get_xticklabels():
-    tick.set_rotation(-90)
+    '\\texttt{hpx::make\_ready\_future}',
+    '\\texttt{hpx::promise}',
+    '\\texttt{hpx::async}',
+    '\\texttt{std::promise}',
+    '\\texttt{std::async}'), rotation=-10, ha='center')
+#for tick in ax.get_xticklabels():
+#    tick.set_rotation(-40)
 
 ax.legend((r for r in rects), (d[0] for d in data))
 
-plt.show()
+plt.tight_layout(.5)
+
+#plt.show()
+
+fname = '%s/future_overhead.pgf' % os.path.join(results_base, '../figures/')
+plt.savefig(fname)
