@@ -183,12 +183,12 @@ for axs in axes:
         elif r == 'std':
             ax.set_title('\\texttt{std::async}', fontsize=11)
         elif r == 'omp_for':
-            ax.set_title('OpenMP for')
+            ax.set_title('OpenMP for', fontsize=11)
         elif r == 'omp_task':
-            ax.set_title('OpenMP task')
+            ax.set_title('OpenMP task', fontsize=11)
         ax.set_aspect('equal', 'box')
-    axs[0].set_ylabel('Speedup')
-    axs[2].set_ylabel('Speedup')
+    axs[0].set_ylabel('Speedup', fontsize=11)
+    axs[2].set_ylabel('Speedup', fontsize=11)
 
 for d in data:
     i = data_map[d[0]]
