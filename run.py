@@ -9,7 +9,7 @@ else:
 
 my_env = os.environ.copy()
 
-result_dir = os.path.join('runs', socket.hostname())
+result_dir = os.path.join('runs', socket.gethostname())
 
 if 'tasks' in run or run == 'all':
     benchmarks=[
@@ -65,7 +65,7 @@ if 'scheduling' in run or run == 'all':
 
 if 'serialization' in run or run == 'all':
     benchmarks=[
-        'distributed/serialization',
+        'distributed/serialization_overhead',
     ]
     my_env['NUM_THREADS'] = '1'
     my_env['OMP_NUM_THREADS'] = '1'
@@ -75,7 +75,7 @@ if 'serialization' in run or run == 'all':
         if not os.path.exists(os.path.dirname(result)):
             os.makedirs(os.path.dirname(result))
         bench = [
-            benchmark + ' --benchmark_out_format=json --benchmark_out=' + result]
+                benchmark + ' --hpx:threads=1 --benchmark_out_format=json --benchmark_out=' + result]
         p = subprocess.Popen(bench, env = my_env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         print(p.stdout.read())
         p.wait()
