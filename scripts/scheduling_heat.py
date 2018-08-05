@@ -189,6 +189,8 @@ for axs in axes:
         ax.set_aspect('equal', 'box')
     axs[0].set_ylabel('Speedup', fontsize=11)
     axs[2].set_ylabel('Speedup', fontsize=11)
+    axs[2].set_xlabel('\# Cores', fontsize=11)
+    axs[3].set_xlabel('\# Cores', fontsize=11)
 
 for d in data:
     i = data_map[d[0]]
@@ -213,12 +215,11 @@ for d in data:
             g = g + 1
     axes[i][-1].legend()
 
-
 for d in data:
     i = data_map[d[0]]
     fig = figs[i]
     fig.tight_layout()
-    fig.subplots_adjust(wspace=0.25, hspace=0.20, top=0.89, bottom=0.05)
+    fig.subplots_adjust(wspace=0.25, hspace=0.20, top=0.89, bottom=0.06)
     fig.text(0.5, 0.95, 'Scheduling Speedup for different task granularities (%s)' % d[0],
              horizontalalignment='center', color='black', weight='bold',
              fontsize=11)

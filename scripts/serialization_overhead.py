@@ -9,6 +9,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import os
 import math
+import collections
 
 if len(sys.argv) < 2:
     print('Usage: %s <results_base> sub_dirs...' % sys.argv[0])
@@ -25,9 +26,7 @@ if len(sys.argv) == 2:
 else:
     results = [os.path.join(results_base, f) for f in sys.argv[2:]]
 
-pprint(results)
-
-data = []
+data = {}
 
 for results_dir in results:
     name = os.path.split(results_dir)[-1]
@@ -39,9 +38,11 @@ for results_dir in results:
     for benchmark in benchmarks:
         (name, serialized_bytes, _) = benchmark['name'].split('/')
         serialized_bytes = int(serialized_bytes)
-        time = benchmark['real_time'] / math.pow(10, 9)
-        print(name, serialized_bytes, time)
+        time = benchmark['real_time'] / 1e9
+        if not name in data:
+            data[name] = collections.OrderedDict()
 
+        data[name][serialized_bytes] = time
 
     #mhz = float(coroutines_data['context']['mhz_per_cpu'])
     #baseline_str = 'function_call_overhead/real_time'
@@ -78,9 +79,9 @@ if len(data) == 0:
 #  - coroutines (plain)
 #  - hpx threads
 #  - std threads
-N = len(data[0][1])
+N = len(data['memcpy_double'])
 
-N_experiments = len(data)
+N_experiments = 3
 
 ind = np.arange(N)
 width = 1.0 / (N_experiments + 1.0)
@@ -116,18 +117,55 @@ matplotlib.rcParams.update(pgf_with_latex)
 fig, ax = plt.subplots(figsize=(5.78851, 5.78851 * (9./16.)))
 
 rects = []
-for d, i in zip(data, range(0, len(data))):
-    print('%s %s' % (d[0], d[1][2]))
-    rect = ax.bar(ind + i * width, d[1], width)
-    rects.append(rect)
 
-ax.set_ylabel('Cycles')
-ax.set_title('Task Creation Overhead', fontsize=11, weight='bold')
 ax.set_xticks(ind + ((N_experiments - 1) * width) / 2.0)
-ax.set_xticklabels(('HPX Coroutines', 'HPX Threads', 'OpenMP'))
+ax.set_xticklabels(data['memcpy_double'].keys(), rotation=80, ha='left')
 
-ax.legend((r for r in rects), (d[0] for d in data))
+serialized_bytes = (np.array(data['memcpy_double'].keys()) * 8) / 1e9
+
+# plot memcpy...
+rect = ax.bar(ind, serialized_bytes / np.array(data['memcpy_double'].values()) , width)
+rects.append(rect)
+
+hpx_ind = ind + width
+
+hpx_parcel_total = np.array(data['hpx_double_input'].values())
+hpx_parcel_total = hpx_parcel_total + np.array(data['hpx_double_output'].values())
+
+rect = ax.bar(hpx_ind, serialized_bytes / hpx_parcel_total , width)
+rects.append(rect)
+
+hpx_ind = ind + 2* width
+
+hpx_parcel_total = np.array(data['hpx_parcel_double_input'].values())
+hpx_parcel_total = hpx_parcel_total + np.array(data['hpx_parcel_double_output'].values())
+
+rect = ax.bar(hpx_ind, serialized_bytes / hpx_parcel_total , width)
+rects.append(rect)
+
+
+#for name in data:
+#    print(data[name].keys(), data[name].values())
+#    label = ' '.join(name.split('_'))
+#    ax.plot(data[name].keys(), data[name].values(), label = label)
+
+ax.legend(rects, ['memcpy', 'plain serialization', 'parcel serialization'])
+
+#data[37] = 35;
+#data[23] = 25;
+#ax.plot(data.keys(), data.values())
+
+#rects = []
+#for d, i in zip(data, range(0, len(data))):
+#    print('%s %s' % (d[0], d[1][2]))
+#    rect = ax.bar(ind + i * width, d[1], width)
+#    rects.append(rect)
+#
+ax.set_ylabel('Bandwidth [GB/s]')
+ax.set_xlabel('Processed bytes')
+ax.set_title('HPX Serialization throughput', fontsize=11, weight='bold')
 plt.tight_layout(.5)
 
-fname = '%s/task_overhead.pgf' % os.path.join(results_base, '../figures/')
+fname = '%s/serialization_overhead.pgf' % os.path.join(results_base, '../figures/')
 plt.savefig(fname)
+#plt.show()
