@@ -47,7 +47,7 @@ if 'scheduling' in run or run == 'all':
         'scheduling/std_scheduling',
     ]
 
-    r = range(1, max_cores + 1, 2)
+    r = range(0, max_cores + 1, 2)
     r[0] = 1
     for threads in r:
 
