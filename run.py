@@ -33,8 +33,9 @@ if 'tasks' in run or run == 'all':
             os.makedirs(os.path.dirname(result))
         bench = [
             benchmark + ' --benchmark_out_format=json --benchmark_out=' + result]
-        p = subprocess.Popen(bench, env = my_env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        print(p.stdout.read())
+        p = subprocess.Popen(bench, env = my_env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        for line in iter(p.stdout.readline, b''):
+            print(line.rstrip())
         p.wait()
 
 if 'scheduling' in run or run == 'all':
@@ -61,8 +62,9 @@ if 'scheduling' in run or run == 'all':
                 os.makedirs(os.path.dirname(result))
             bench = [
                 benchmark + ' --benchmark_out_format=json --benchmark_out=' + result + ' -Ihpx.stacks.use_guard_pages=0']
-            p = subprocess.Popen(bench, env = my_env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            print(p.stdout.read())
+            p = subprocess.Popen(bench, env = my_env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            for line in iter(p.stdout.readline, b''):
+                print(line.rstrip())
             p.wait()
 
 if 'serialization' in run or run == 'all':
@@ -78,8 +80,9 @@ if 'serialization' in run or run == 'all':
             os.makedirs(os.path.dirname(result))
         bench = [
                 benchmark + ' --hpx:threads=1 --benchmark_out_format=json --benchmark_out=' + result]
-        p = subprocess.Popen(bench, env = my_env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        print(p.stdout.read())
+        p = subprocess.Popen(bench, env = my_env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        for line in iter(p.stdout.readline, b''):
+            print(line.rstrip())
         p.wait()
 
 if 'distributed' in run or run == 'all':
@@ -97,8 +100,9 @@ if 'distributed' in run or run == 'all':
             os.makedirs(os.path.dirname(result))
         bench = [
                 'srun ' + benchmark + (' --hpx:threads=%s --benchmark_out_format=json --benchmark_out=' % max_cores) + result]
-        p = subprocess.Popen(bench, env = my_env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        print(p.stdout.read())
+        p = subprocess.Popen(bench, env = my_env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        for line in iter(p.stdout.readline, b''):
+            print(line.rstrip())
         p.wait()
 
     benchmarks=[
@@ -113,8 +117,9 @@ if 'distributed' in run or run == 'all':
             os.makedirs(os.path.dirname(result))
         bench = [
                 'srun ' + benchmark + ' --benchmark_out_format=json --benchmark_out=' + result]
-        p = subprocess.Popen(bench, env = my_env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        print(p.stdout.read())
+        p = subprocess.Popen(bench, env = my_env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        for line in iter(p.stdout.readline, b''):
+            print(line.rstrip())
         p.wait()
 
 if 'broadcast' in run or run == 'all':
@@ -123,29 +128,33 @@ if 'broadcast' in run or run == 'all':
     ]
     my_env['NUM_THREADS'] = '%s' % max_cores
     my_env['OMP_NUM_THREADS'] = '1'
+    nodes = my_env['SLURM_STEP_NUM_NODES']
     for benchmark in benchmarks:
         print('  %s' % benchmark)
-        result = os.path.join(result_dir, benchmark + '.json')
+        result = os.path.join(result_dir, "%s_%s" % (benchmark, nodes) + '.json')
         if not os.path.exists(os.path.dirname(result)):
             os.makedirs(os.path.dirname(result))
         bench = [
-                'srun ' + benchmark + (' --hpx:threads=%s --benchmark_out_format=json --benchmark_out=' % max_cores) + result]
-        p = subprocess.Popen(bench, env = my_env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        print(p.stdout.read())
+                'srun ' + os.path.join(os.getcwd(), benchmark) + (' --hpx:threads=%s --benchmark_out_format=json --benchmark_out=' % max_cores) + result]
+	print(bench)
+        p = subprocess.Popen(bench, env = my_env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        for line in iter(p.stdout.readline, b''):
+            print(line.rstrip())
         p.wait()
 
     benchmarks=[
-        'distributed/mpi_broadcast',
+        #'distributed/mpi_broadcast',
     ]
     my_env['NUM_THREADS'] = '%s' % max_cores
     my_env['OMP_NUM_THREADS'] = '1'
     for benchmark in benchmarks:
         print('  %s' % benchmark)
-        result = os.path.join(result_dir, benchmark + '.json')
+        result = os.path.join(result_dir, "%s_%s" % (benchmark, nodes) + '.json')
         if not os.path.exists(os.path.dirname(result)):
             os.makedirs(os.path.dirname(result))
         bench = [
-                'srun ' + benchmark + ' --benchmark_out_format=json --benchmark_out=' + result]
-        p = subprocess.Popen(bench, env = my_env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        print(p.stdout.read())
+                'srun ' + os.path.join(os.getcwd(), benchmark) + ' --benchmark_out_format=json --benchmark_out=' + result]
+        p = subprocess.Popen(bench, env = my_env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+	for line in iter(p.stdout.readline, b''):
+		print(line.rstrip())
         p.wait()
