@@ -19,7 +19,6 @@ if 'tasks' in run or run == 'all':
         'tasks/coroutines_overhead',
         'tasks/future_overhead',
         'tasks/hpx_thread_overhead',
-        'tasks/std_thread_overhead',
         'tasks/omp_overhead',
     ]
 
@@ -32,6 +31,25 @@ if 'tasks' in run or run == 'all':
             os.makedirs(os.path.dirname(result))
         bench = [
                 os.path.join(os.getcwd(), benchmark), '--hpx:ini=hpx.parcel.enable=0', '--hpx:threads=1', '--benchmark_out_format=json', '--benchmark_out=' + result]
+        print(bench)
+        p = subprocess.Popen(bench, env = my_env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        for line in iter(p.stdout.readline, b''):
+            print(line.rstrip())
+        p.wait()
+    
+    benchmarks=[
+	'tasks/std_thread_overhead',
+    ]
+    
+    my_env['NUM_THREADS'] = '1'
+    my_env['OMP_NUM_THREADS'] = '1'
+    for benchmark in benchmarks:
+        print('  %s' % benchmark)
+        result = os.path.join(result_dir, benchmark + '.json')
+        if not os.path.exists(os.path.dirname(result)):
+            os.makedirs(os.path.dirname(result))
+        bench = [
+                os.path.join(os.getcwd(), benchmark), '--benchmark_out_format=json', '--benchmark_out=' + result]
         print(bench)
         p = subprocess.Popen(bench, env = my_env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in iter(p.stdout.readline, b''):
