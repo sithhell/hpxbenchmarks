@@ -10,25 +10,17 @@
 #include <support/dummy.hpp>
 #include <support/null_reporter.hpp>
 
+#include <iostream>
 #include <algorithm>
 
-static void mpi_barrier(benchmark::State& state)
+static void mpi_broadcast(benchmark::State& state)
 {
     std::size_t size = state.range(0);
     int rank = 0;
-    int dst_rank = 0;
     int comm_size = 0;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
-    if(rank == 0)
-    {
-        dst_rank = 1;
-    }
-    else
-    {
-        dst_rank = 0;
-    }
     MPI_Barrier(MPI_COMM_WORLD);
 
     for (auto _: state)
@@ -41,16 +33,17 @@ static void mpi_barrier(benchmark::State& state)
 
         double elapsed = MPI_Wtime() - start;
 
-        std::vector<double> times(comm_size);
-        MPI_Allgather(&elapsed, 1, MPI_DOUBLE, times.data(), comm_size, MPI_DOUBLE, MPI_COMM_WORLD);
+        double result = 0.0;
 
-        state.SetIterationTime(*std::max(times.begin(), times.end()));
+        MPI_Allreduce(&elapsed, &result, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+
+        state.SetIterationTime(result);
     }
     MPI_Barrier(MPI_COMM_WORLD);
 
     state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(size * sizeof(double)));
 }
-BENCHMARK(mpi_barrier)
+BENCHMARK(mpi_broadcast)
     ->UseRealTime()
     ->RangeMultiplier(2)->Range(1, 1024*1024)
     ->UseManualTime()
@@ -71,6 +64,8 @@ int main(int argc, char **argv)
         null_reporter reporter;
         benchmark::RunSpecifiedBenchmarks(&reporter);
     }
+
+    MPI_Finalize();
 
     return 0;
 }

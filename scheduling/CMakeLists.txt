@@ -14,7 +14,7 @@ hpx_setup_target(hpx_scheduling)
 add_executable(omp_scheduling omp_scheduling.cpp)
 target_link_libraries(omp_scheduling benchmark dummy)
 target_compile_options(omp_scheduling PUBLIC ${OpenMP_CXX_FLAGS})
-hpx_setup_target(omp_scheduling)
+#hpx_setup_target(omp_scheduling)
 set_target_properties(omp_scheduling PROPERTIES LINK_FLAGS ${OpenMP_CXX_FLAGS})
 
 if (TBB_FOUND)

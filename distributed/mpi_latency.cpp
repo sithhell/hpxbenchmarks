@@ -88,5 +88,7 @@ int main(int argc, char **argv)
         benchmark::RunSpecifiedBenchmarks(&reporter);
     }
 
+    MPI_Finalize();
+
     return 0;
 }

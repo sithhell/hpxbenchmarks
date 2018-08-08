@@ -43,7 +43,7 @@ static void hpx_broadcast_direct(benchmark::State& state)
 }
 BENCHMARK(hpx_broadcast_direct)
     ->UseRealTime()
-    ->RangeMultiplier(2)->Ranges({{1, 1024*1024}, {1, 128}})
+    ->RangeMultiplier(2)->Ranges({{1, 1024*1024}, {1, 8}})
     ;
 
 static void hpx_broadcast(benchmark::State& state)
@@ -68,7 +68,7 @@ static void hpx_broadcast(benchmark::State& state)
 }
 BENCHMARK(hpx_broadcast)
     ->UseRealTime()
-    ->RangeMultiplier(2)->Ranges({{1, 1024*1024}, {1, 128}})
+    ->RangeMultiplier(2)->Ranges({{1, 1024*1024}, {1, 8}})
     ;
 
 int main(int argc, char **argv)

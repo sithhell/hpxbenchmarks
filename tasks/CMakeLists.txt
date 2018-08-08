@@ -5,7 +5,7 @@ hpx_setup_target(coroutines_overhead)
 add_executable(omp_overhead omp_overhead.cpp)
 target_link_libraries(omp_overhead benchmark dummy )
 target_compile_options(omp_overhead PUBLIC ${OpenMP_CXX_FLAGS})
-hpx_setup_target(omp_overhead)
+#hpx_setup_target(omp_overhead TYPE NO_HPX_MAIN)
 set_target_properties(omp_overhead PROPERTIES LINK_FLAGS ${OpenMP_CXX_FLAGS})
 
 if (TBB_FOUND)
