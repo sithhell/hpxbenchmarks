@@ -99,7 +99,7 @@ if 'distributed' in run or run == 'all':
         result = os.path.join(result_dir, benchmark + '.json')
         if not os.path.exists(os.path.dirname(result)):
             os.makedirs(os.path.dirname(result))
-        bench = ['srun',
+        bench = ['srun', '--pty',
                 os.path.join(os.getcwd(), benchmark), '--hpx:threads=%s' % max_cores, '--benchmark_out_format=json', '--benchmark_out=' + result]
         p = subprocess.Popen(bench, env = my_env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in iter(p.stdout.readline, b''):
@@ -116,7 +116,7 @@ if 'distributed' in run or run == 'all':
         result = os.path.join(result_dir, benchmark + '.json')
         if not os.path.exists(os.path.dirname(result)):
             os.makedirs(os.path.dirname(result))
-        bench = ['srun',
+        bench = ['srun', '--pty',
                 os.path.join(os.getcwd(), benchmark), '--benchmark_out_format=json', '--benchmark_out=' + result]
         p = subprocess.Popen(bench, env = my_env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in iter(p.stdout.readline, b''):
@@ -135,7 +135,7 @@ if 'broadcast' in run or run == 'all':
         result = os.path.join(result_dir, "%s_%s" % (benchmark, nodes) + '.json')
         if not os.path.exists(os.path.dirname(result)):
             os.makedirs(os.path.dirname(result))
-        bench = ['srun',
+        bench = ['srun', '--pty',
                 os.path.join(os.getcwd(), benchmark), '--hpx:threads=%s' % max_cores, '--benchmark_out_format=json', '--benchmark_out=' + result]
         p = subprocess.Popen(bench, env = my_env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in iter(p.stdout.readline, b''):
@@ -152,7 +152,7 @@ if 'broadcast' in run or run == 'all':
         result = os.path.join(result_dir, "%s_%s" % (benchmark, nodes) + '.json')
         if not os.path.exists(os.path.dirname(result)):
             os.makedirs(os.path.dirname(result))
-        bench = ['srun',
+        bench = ['srun', '--pty',
                 os.path.join(os.getcwd(), benchmark), '--benchmark_out_format=json', '--benchmark_out=' + result]
         p = subprocess.Popen(bench, env = my_env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in iter(p.stdout.readline, b''):

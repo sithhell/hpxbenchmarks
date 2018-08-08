@@ -57,10 +57,11 @@ static void mpi_isend_irecv(benchmark::State& state)
         }
         double elapsed = MPI_Wtime() - start;
 
-        double times[2];
-        MPI_Allgather(&elapsed, 1, MPI_DOUBLE, &times, 2, MPI_DOUBLE, MPI_COMM_WORLD);
+        double result = 0.0;
 
-        state.SetIterationTime(std::max(times[0], times[1]));
+        MPI_Allreduce(&elapsed, &result, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+
+        state.SetIterationTime(result);
     }
     MPI_Barrier(MPI_COMM_WORLD);
 
