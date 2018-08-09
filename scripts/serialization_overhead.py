@@ -11,6 +11,15 @@ import os
 import math
 import collections
 
+def to_mbyte(size_bytes):
+    if size_bytes == 0:
+        return "0B"
+    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+    i = int(math.floor(math.log(size_bytes, 1024)))
+    p = math.pow(1024, i)
+    s = round(size_bytes / p, 2)
+    return "%s %s" % (s, size_name[i])
+
 if len(sys.argv) < 2:
     print('Usage: %s <results_base> sub_dirs...' % sys.argv[0])
     sys.exit(1)
@@ -118,7 +127,7 @@ fig, ax = plt.subplots(figsize=(5.78851, 5.78851 * (9./16.)))
 rects = []
 
 ax.set_xticks(ind + ((N_experiments - 1) * width) / 2.0)
-ax.set_xticklabels(data['memcpy_double'].keys(), rotation=80, ha='left')
+ax.set_xticklabels([to_mbyte(size) for size in data['memcpy_double'].keys()], rotation=80, ha='right')
 
 serialized_bytes = (np.array(data['memcpy_double'].keys()) * 8) / 1e9
 
