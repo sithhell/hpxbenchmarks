@@ -56,8 +56,7 @@ else:
 data = {}
 
 for results_dir in results:
-    name = os.path.split(results_dir)[-1]
-    print(name)
+    result_name = os.path.split(results_dir)[-1]
     async_data = json.load(open('%s/distributed/async_latency.json' % results_dir))
 
     benchmarks = async_data['benchmarks']
@@ -113,9 +112,9 @@ ax.legend()
 
 ax.set_ylabel('Bandwidth [GB/s]')
 ax.set_xlabel('Processed bytes')
-ax.set_title('HPX action throughput', fontsize=11, weight='bold')
+ax.set_title('HPX action throughput (%s)' % result_name, fontsize=11, weight='bold')
 plt.tight_layout(.5)
 
-fname = '%s/action_throughput.pgf' % os.path.join(results_base, '../figures/')
+fname = '%s/action_throughput_%s.pgf' % (os.path.join(results_base, '../figures/'), result_name)
 plt.savefig(fname)
 #plt.show()

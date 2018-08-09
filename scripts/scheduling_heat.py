@@ -12,6 +12,8 @@ import matplotlib.colors as colors
 import matplotlib.gridspec as gridspec
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import os
+import re
+import collections
 
 pgf_with_latex = {
     "pgf.texsystem": "xelatex",         # use Xelatex which is TTF font aware
@@ -97,51 +99,96 @@ runtimes = ('seq', 'hpx', 'omp_for', 'omp_task', 'std')
 max_speedup = 0
 max_thread = 0
 
+results_json = {}
+
+threads = []
+
 for results_dir in results:
     name = os.path.split(results_dir)[-1]
+    print(os.path.split(results_dir))
+
+    tresults = [ f for f in os.listdir('%s/scheduling' % results_dir) if '_scheduling_t' in f ]
+    for result in tresults:
+        print(result)
+        m = re.search('([a-z]+)_scheduling_t([0-9]+).json', result)
+        runtime, thread = m.groups()
+        if not name in results_json:
+            results_json[name] = {}
+        if not runtime in results_json[name]:
+            results_json[name][runtime] = collections.OrderedDict()
+
+        print('got %s' % thread)
+        t = int(thread)
+        if t > max_thread:
+            max_thread = t
+        if not t in threads:
+            threads.append(t)
+
+        results_json[name][runtime][t] = json.load(open('%s/scheduling/%s' % (results_dir, result)))
+
+for results_dir in results:
+    name = os.path.split(results_dir)[-1]
+    print(os.path.split(results_dir))
     times = {}
     thread_nums = []
     for runtime in runtimes:
         times[runtime] = []
-        for threads in range(1, 17):
-            try:
-                if runtime == 'omp_for':
-                    jdata = json.load(open('%s/scheduling/%s_scheduling_t%s.json' % (results_dir, 'omp', threads)))
-                elif runtime == 'omp_task':
-                    jdata = json.load(open('%s/scheduling/%s_scheduling_t%s.json' % (results_dir, 'omp', threads)))
+        if runtime == 'omp_for':
+            jkey = 'omp'
+        elif runtime == 'omp_task':
+            jkey = 'omp'
+        else:
+            jkey = runtime
+
+        for thread in sorted(threads):
+            if runtime == 'seq' and thread > 1:
+                continue
+
+            jdata = results_json[name][jkey][thread]
+            #if runtime == 'omp_for':
+            #    jdata = json.load(open('%s/scheduling/%s_scheduling_t%s.json' % (results_dir, 'omp', threads)))
+            #elif runtime == 'omp_task':
+            #    jdata = json.load(open('%s/scheduling/%s_scheduling_t%s.json' % (results_dir, 'omp', threads)))
+            #else:
+            #    jdata = json.load(open('%s/scheduling/%s_scheduling_t%s.json' % (results_dir, runtime, threads)))
+
+            if not thread in thread_nums:
+                t = int(thread)
+                if t > max_thread:
+                    max_thread = t
+                thread_nums.append(t)
+
+            thread_times = []
+
+            if runtime == 'omp_for':
+                base_name = 'omp_homogeneous_for'
+            elif runtime == 'omp_task':
+                base_name = 'omp_homogeneous_seq'
+            else:
+                base_name = jdata['benchmarks'][0]['name'].split('/')[0]
+
+            print(base_name)
+            #print('hae?', jkey, jdata['benchmarks'][0])
+            for granularity in granularities:
+                entry = [x for x in jdata['benchmarks'] if x['name'] == '%s/%s/real_time' % (base_name, granularity)]
+                if len(entry) == 0:
+                    print(jkey, granularity, threads, runtime, jdata)
+                    break
                 else:
-                    jdata = json.load(open('%s/scheduling/%s_scheduling_t%s.json' % (results_dir, runtime, threads)))
+                    time = float(entry[0]['real_time'])
+                print (time)
+                #time = float((x for x in jdata['benchmarks']
+                #    if x['name'] == '%s/%s/real_time' % (base_name, granularity))['real_time'])
+                thread_times.append(time)
+            if runtime == 'seq':
+                times[runtime].append(np.array(thread_times))
+            else:
+                times[runtime].append(times['seq'][0] / np.array(thread_times))
+                this_max = np.max(times[runtime][-1])
+                if this_max > max_speedup:
+                    max_speedup = this_max
+                #max_speedup = np.max(np.max(times[runtime][-1]), max_speedup)
 
-                if not threads in thread_nums:
-                    t = int(threads)
-                    if t > max_thread:
-                        max_thread = t
-                    thread_nums.append(t)
-
-                thread_times = []
-
-                if runtime == 'omp_for':
-                    base_name = 'omp_homogeneous_for'
-                elif runtime == 'omp_task':
-                    base_name = 'omp_homogeneous_seq'
-                else:
-                    base_name = jdata['benchmarks'][0]['name'].split('/')[0]
-
-                for granularity in granularities:
-                    time = float((x for x in jdata['benchmarks']
-                        if x['name'] == '%s/%s/real_time' % (base_name, granularity)).next()['real_time'])
-                    thread_times.append(time)
-                if runtime == 'seq':
-                    times[runtime].append(np.array(thread_times))
-                else:
-                    times[runtime].append(times['seq'][0] / np.array(thread_times))
-                    this_max = np.max(times[runtime][-1])
-                    if this_max > max_speedup:
-                        max_speedup = this_max
-                    #max_speedup = np.max(np.max(times[runtime][-1]), max_speedup)
-
-            except:
-                break
     print(name, len(times), len(thread_nums))
     data.append((name, max_speedup, thread_nums, times))
     max_speedup=0
@@ -193,6 +240,7 @@ for axs in axes:
     axs[3].set_xlabel('\# Cores', fontsize=11)
 
 for d in data:
+    print d
     i = data_map[d[0]]
     for runtime in runtimes[1:]:
         j = runtime_map[runtime]
@@ -200,12 +248,16 @@ for d in data:
 
         #normalize data
         plot_data =  np.transpose(np.array(d[3][runtime]))
+        print(runtime, plot_data)
 
         ax = axes[i][j]
 
         k = 0
-        ax.set_xticks(d[2])
-        ax.set_xticklabels(['%s' % t if t % 4 == 0 else '' for t in d[2]])
+        ax.set_xticks([ tick for tick in d[2] if tick > 1])
+        if max_thread == 68:
+            ax.set_xticklabels(['%s' % t if t % 8 == 0 else '' for t in d[2] if t > 1])
+        else:
+            ax.set_xticklabels(['%s' % t if t % 4 == 0 else '' for t in d[2] if t > 1])
 
         ax.plot(d[2], d[2], color='k', linestyle='--', label='ideal Speedup')
         g = 0

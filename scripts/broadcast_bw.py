@@ -56,35 +56,35 @@ else:
 data = {}
 
 for results_dir in results:
-    result_name = os.path.split(results_dir)[-1]
-    async_data = json.load(open('%s/distributed/channel_send_recv.json' % results_dir))
+    #result_name = os.path.split(results_dir)[-1]
+    #async_data = json.load(open('%s/distributed/async_latency.json' % results_dir))
 
-    benchmarks = async_data['benchmarks']
+    #benchmarks = async_data['benchmarks']
 
-    for benchmark in benchmarks:
-        (name, sent_bytes, window_size, _) = benchmark['name'].split('/')
+    #for benchmark in benchmarks:
+    #    (name, sent_bytes, window_size, _) = benchmark['name'].split('/')
 
-        if window_size in ['2', '4', '8', '16', '32', '64']:
-            continue
+    #    if window_size in ['2', '4', '8', '16', '32', '64']:
+    #        continue
 
-        window_size = int(window_size)
-        time = float(benchmark['bytes_per_second']) / 1e9
-        if not name in data:
-            data[name] = collections.OrderedDict()
-        if not window_size in data[name]:
-            data[name][window_size] = collections.OrderedDict()
+    #    window_size = int(window_size)
+    #    time = float(benchmark['bytes_per_second']) / 1e9
+    #    if not name in data:
+    #        data[name] = collections.OrderedDict()
+    #    if not window_size in data[name]:
+    #        data[name][window_size] = collections.OrderedDict()
 
-        data[name][window_size][sent_bytes] = time# / window_size
+    #    data[name][window_size][sent_bytes] = time# / window_size
 
-    async_data = json.load(open('%s/distributed/mpi_latency.json' % results_dir))
-    benchmarks = async_data['benchmarks']
+    #async_data = json.load(open('%s/distributed/mpi_broadcast.json' % results_dir))
+    #benchmarks = async_data['benchmarks']
 
     name = 'mpi'
     data[name] = collections.OrderedDict()
     for benchmark in benchmarks:
         (__, sent_bytes, window_size, _) = benchmark['name'].split('/')
-        if window_size in ['2', '4', '8', '16', '32', '64']:
-            continue
+        #if window_size in ['2', '4', '8', '16', '32', '64']:
+        #    continue
 
         window_size = int(window_size)
         time = float(benchmark['bytes_per_second']) / 1e9
@@ -97,7 +97,7 @@ fig, ax = plt.subplots(figsize=(5.78851, 5.78851 * (9./16.)))
 
 sent_bytes = data['mpi'][1].keys()
 
-line_styles = { 'hpx_channel_send_recv': '-', 'mpi': ':'}
+line_styles = { 'hpx_async_direct': '-', 'hpx_async': '--', 'mpi': ':'}
 
 for name in data:
     for window_size in data[name]:
@@ -112,9 +112,9 @@ ax.legend()
 
 ax.set_ylabel('Bandwidth [GB/s]')
 ax.set_xlabel('Processed bytes')
-ax.set_title('HPX channel throughput (%s)' % result_name, fontsize=11, weight='bold')
+ax.set_title('HPX Broadcast Bandwidth (%s)' % result_name, fontsize=11, weight='bold')
 plt.tight_layout(.5)
 
-fname = '%s/channel_throughput_%s.pgf' % (os.path.join(results_base, '../figures/'), result_name)
+fname = '%s/broadcast_bw_%s.pgf' % (os.path.join(results_base, '../figures/'), result_name)
 plt.savefig(fname)
 #plt.show()

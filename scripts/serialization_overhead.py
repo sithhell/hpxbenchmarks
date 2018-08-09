@@ -29,8 +29,7 @@ else:
 data = {}
 
 for results_dir in results:
-    name = os.path.split(results_dir)[-1]
-    print(name)
+    result_name = os.path.split(results_dir)[-1]
     serialization_data = json.load(open('%s/distributed/serialization_overhead.json' % results_dir))
 
     benchmarks = serialization_data['benchmarks']
@@ -163,9 +162,10 @@ ax.legend(rects, ['memcpy', 'plain serialization', 'parcel serialization'])
 #
 ax.set_ylabel('Bandwidth [GB/s]')
 ax.set_xlabel('Processed bytes')
-ax.set_title('HPX Serialization throughput', fontsize=11, weight='bold')
+ax.set_title('HPX Serialization throughput (%s)' % result_name, fontsize=11, weight='bold')
 plt.tight_layout(.5)
 
-fname = '%s/serialization_overhead.pgf' % os.path.join(results_base, '../figures/')
+print(result_name)
+fname = '%s/serialization_overhead_%s.pgf' % (os.path.join(results_base, '../figures/'), result_name)
 plt.savefig(fname)
 #plt.show()
