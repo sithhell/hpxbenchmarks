@@ -63,20 +63,28 @@ for results_dir in results:
     std_async_int = float((x for x in future_data['benchmarks']
         if x['name'] == 'std_async_int_overhead/real_time').next()['real_time'])
 
-    times = np.array([
+    times1 = np.array([
         hpx_make_ready_void,
         #hpx_make_ready_int,
         hpx_promise_void,
         #hpx_promise_int,
         hpx_async_void,
         #hpx_async_int,
-        std_promise_void,
+        #std_promise_int,
+        #std_async_int
+    ])
+    cycles1 = (times1 * mhz) / 1000
+    times2 = np.array([
+        #hpx_make_ready_int,
+        #hpx_promise_int,
+        hpx_async_void,
+        #hpx_async_int,
         #std_promise_int,
         std_async_void
         #std_async_int
     ])
-    cycles = (times * mhz) / 1000
-    data.append((name, cycles))
+    cycles2 = (times2 * mhz) / 1000
+    data.append((name, cycles1, cycles2))
 
 # Number of data points:
 #  - coroutines (plain)
@@ -124,13 +132,42 @@ for d, i in zip(data, range(0, len(data))):
     rects.append(rect)
 
 ax.set_ylabel('Cycles')
-ax.set_title('Async timings', fontsize=11, weight='bold')
+ax.set_title('Future timings', fontsize=11, weight='bold')
 ax.set_xticks(ind + ((N_experiments - 1) * width) / 2.0)
 ax.set_xticklabels((
     '\\texttt{hpx::make\_ready\_future}',
     '\\texttt{hpx::promise}',
+    '\\texttt{std::promise}'), rotation=-10, ha='center')
+#for tick in ax.get_xticklabels():
+#    tick.set_rotation(-40)
+
+ax.legend((r for r in rects), (d[0] for d in data))
+
+plt.tight_layout(.5)
+
+#plt.show()
+
+fname = '%s/future_overhead1.pgf' % os.path.join(results_base, '../figures/')
+plt.savefig(fname)
+fig, ax = plt.subplots(figsize=(5.78851, 5.78851 * (9./16.)))
+
+N = len(data[0][2])
+
+N_experiments = len(data)
+
+ind = np.arange(N)
+width = 1.0 / (N_experiments + 1.0)
+
+rects = []
+for d, i in zip(data, range(0, len(data))):
+    rect = ax.bar(ind + i * width, d[2], width)
+    rects.append(rect)
+
+ax.set_ylabel('Cycles')
+ax.set_title('Async timings', fontsize=11, weight='bold')
+ax.set_xticks(ind + ((N_experiments - 1) * width) / 2.0)
+ax.set_xticklabels((
     '\\texttt{hpx::async}',
-    '\\texttt{std::promise}',
     '\\texttt{std::async}'), rotation=-10, ha='center')
 #for tick in ax.get_xticklabels():
 #    tick.set_rotation(-40)
@@ -141,5 +178,5 @@ plt.tight_layout(.5)
 
 #plt.show()
 
-fname = '%s/future_overhead.pgf' % os.path.join(results_base, '../figures/')
+fname = '%s/future_overhead2.pgf' % os.path.join(results_base, '../figures/')
 plt.savefig(fname)

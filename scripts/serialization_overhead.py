@@ -127,7 +127,7 @@ fig, ax = plt.subplots(figsize=(5.78851, 5.78851 * (9./16.)))
 rects = []
 
 ax.set_xticks(ind + ((N_experiments - 1) * width) / 2.0)
-ax.set_xticklabels([to_mbyte(size) for size in data['memcpy_double'].keys()], rotation=80, ha='right')
+ax.set_xticklabels([size for size in data['memcpy_double'].keys()], rotation=80, ha='right')
 
 serialized_bytes = (np.array(data['memcpy_double'].keys()) * 8) / 1e9
 

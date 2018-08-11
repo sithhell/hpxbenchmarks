@@ -54,10 +54,11 @@ for results_dir in results:
     #times = np.array([coroutines, hpx_threads, std_threads])
     #data.append((name, times / baseline))
     #times = np.array([baseline/coroutines, baseline/hpx_threads, baseline/omp])
-    times = np.array([coroutines, hpx_threads - baseline, omp - baseline])
+    times = np.array([coroutines - baseline, hpx_threads - baseline, omp - baseline])
 
-    print(hpx_threads/omp)
-    print(omp/hpx_threads)
+    print(std_threads/coroutines)
+    print(std_threads/hpx_threads)
+    print(std_threads/omp)
 
     cycles = (times * mhz) / 1000
     data.append((name, cycles))
